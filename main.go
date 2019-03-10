@@ -8,16 +8,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type Configuration struct {
 	Playlists []PlaylistConf
+	Port      int
 }
 
 type PlaylistConf struct {
-	Type string
-	Name string
-	IP   string
+	Type     string
+	Playlist string
+	Name     string
+	IP       string
 }
 
 type Playlist struct {
@@ -45,20 +48,17 @@ type Track struct {
 	Title    string   `xml:"title"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	// read configuration
-	file, _ := os.Open("conf.json")
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	configuration := Configuration{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	for _, plConf := range configuration.Playlists {
+func (conf *Configuration) handler(w http.ResponseWriter, r *http.Request) {
+	for _, plConf := range conf.Playlists {
 		if plConf.Type == "pomoyka" {
 			if r.URL.Path[1:] == plConf.Name {
-				resp, err := http.Get("http://pomoyka.win/trash/ttv-list/ttv.all.iproxy.xspf?ip=" + plConf.IP + ":6878")
+				url := "http://pomoyka.win/trash/ttv-list/"
+				if plConf.Playlist == "proxy" {
+					url += "ttv.all.proxy.xspf"
+				} else {
+					url += "ttv.all.iproxy.xspf"
+				}
+				resp, err := http.Get(url + "?ip=" + plConf.IP + ":6878")
 				if err != nil {
 					fmt.Errorf("GET error: %v", err)
 				}
@@ -72,19 +72,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					fmt.Errorf("Read body: %v", err)
 				}
-
-				//xmlFile, err := os.Open("ttv.all.iproxy.xspf")
-				//if err != nil {
-				//fmt.Println(err)
-				//}
-
-				//// defer the closing of our xmlFile so that we can parse it later on
-				//defer xmlFile.Close()
-				//xmlByte, err := ioutil.ReadAll(xmlFile)
-				//if err != nil {
-				//fmt.Errorf("Read xml: %v", err)
-				//}
-
 				var pl Playlist
 				xml.Unmarshal(xmlByte, &pl)
 				var ch = make(map[string]map[string]string)
@@ -108,6 +95,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// read configuration
+	file, _ := os.Open("conf.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	configuration := Configuration{}
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	http.HandleFunc("/", configuration.handler)
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configuration.Port), nil))
 }
