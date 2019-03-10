@@ -1,0 +1,19 @@
+[Unit]
+Description=Playlist for Ott Player
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+
+WorkingDirectory=/usr/local/share/ottplaylist
+
+StandardOutput=journal
+StandardError=journal
+
+ExecStart=/usr/local/share/ottplaylist/ottplaylist
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
