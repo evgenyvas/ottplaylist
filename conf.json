@@ -3,18 +3,21 @@
         {
             "Type": "pomoyka",
             "Name": "pomoyka.ttv.ott.m3u8",
-            "IP": "192.168.1.141"
+            "IP": "192.168.1.141",
+            "Port": 6878
         },
         {
             "Type": "pomoyka",
             "Name": "pomoyka.ttv.local.ott.m3u8",
-            "IP": "127.0.0.1"
+            "IP": "127.0.0.1",
+            "Port": 6878
         },
         {
             "Type": "pomoyka",
             "Playlist": "proxy",
             "Name": "pomoyka.ttv.proxy.ott.m3u8",
-            "IP": "192.168.1.123"
+            "IP": "192.168.1.123",
+            "Port": 8000
         }
     ],
     "Port": 8080

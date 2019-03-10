@@ -21,6 +21,7 @@ type PlaylistConf struct {
 	Playlist string
 	Name     string
 	IP       string
+	Port     int
 }
 
 type Playlist struct {
@@ -58,7 +59,7 @@ func (conf *Configuration) handler(w http.ResponseWriter, r *http.Request) {
 				} else {
 					url += "ttv.all.iproxy.xspf"
 				}
-				resp, err := http.Get(url + "?ip=" + plConf.IP + ":6878")
+				resp, err := http.Get(url + "?ip=" + plConf.IP + ":" + strconv.Itoa(plConf.Port))
 				if err != nil {
 					fmt.Errorf("GET error: %v", err)
 				}
