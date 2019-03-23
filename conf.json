@@ -1,21 +1,24 @@
 {
+    "Types": {
+        "pomoyka.allfon.proxy": "http://pomoyka.win/trash/ttv-list/allfon.all.proxy.xspf",
+        "pomoyka.allfon.iproxy": "http://pomoyka.win/trash/ttv-list/allfon.all.iproxy.xspf"
+    },
     "Playlists": [
         {
-            "Type": "pomoyka",
-            "Name": "pomoyka.ttv.ott.m3u8",
+            "Type": "pomoyka.allfon.iproxy",
+            "Name": "pomoyka.allfon.ott.m3u8",
             "IP": "192.168.1.141",
             "Port": 6878
         },
         {
-            "Type": "pomoyka",
-            "Name": "pomoyka.ttv.local.ott.m3u8",
+            "Type": "pomoyka.allfon.iproxy",
+            "Name": "pomoyka.allfon.local.ott.m3u8",
             "IP": "127.0.0.1",
             "Port": 6878
         },
         {
-            "Type": "pomoyka",
-            "Playlist": "proxy",
-            "Name": "pomoyka.ttv.proxy.ott.m3u8",
+            "Type": "pomoyka.allfon.proxy",
+            "Name": "pomoyka.allfon.proxy.ott.m3u8",
             "IP": "192.168.1.123",
             "Port": 8000
         }

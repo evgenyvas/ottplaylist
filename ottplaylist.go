@@ -12,16 +12,16 @@ import (
 )
 
 type Configuration struct {
+	Types     map[string]string
 	Playlists []PlaylistConf
 	Port      int
 }
 
 type PlaylistConf struct {
-	Type     string
-	Playlist string
-	Name     string
-	IP       string
-	Port     int
+	Type string
+	Name string
+	IP   string
+	Port int
 }
 
 type Playlist struct {
@@ -51,14 +51,9 @@ type Track struct {
 
 func (conf *Configuration) handler(w http.ResponseWriter, r *http.Request) {
 	for _, plConf := range conf.Playlists {
-		if plConf.Type == "pomoyka" {
+		if plConf.Type == "pomoyka.allfon.proxy" || plConf.Type == "pomoyka.allfon.iproxy" {
 			if r.URL.Path[1:] == plConf.Name {
-				url := "http://pomoyka.win/trash/ttv-list/"
-				if plConf.Playlist == "proxy" {
-					url += "ttv.all.proxy.xspf"
-				} else {
-					url += "ttv.all.iproxy.xspf"
-				}
+				url := conf.Types[plConf.Type]
 				resp, err := http.Get(url + "?ip=" + plConf.IP + ":" + strconv.Itoa(plConf.Port))
 				if err != nil {
 					fmt.Errorf("GET error: %v", err)
