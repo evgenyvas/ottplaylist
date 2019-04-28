@@ -2,90 +2,46 @@ package main
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"ottplaylist/format"
+	"ottplaylist/handler"
+	"ottplaylist/types"
 	"strconv"
 )
 
 type Configuration struct {
-	Types     map[string]string
-	Playlists []PlaylistConf
-	Port      int
-}
-
-type PlaylistConf struct {
-	Type string
-	Name string
-	IP   string
-	Port int
-}
-
-type Playlist struct {
-	XMLName xml.Name `xml:"playlist"`
-	Title   string   `xml:"title"`
-	Groups  []Group  `xml:"extension>node"`
-	Tracks  []Track  `xml:"trackList>track"`
-}
-
-type Group struct {
-	XMLName  xml.Name  `xml:"node"`
-	Title    string    `xml:"title,attr"`
-	Channels []Channel `xml:"item"`
-}
-
-type Channel struct {
-	XMLName xml.Name `xml:"item"`
-	Id      string   `xml:"tid,attr"`
-}
-
-type Track struct {
-	XMLName  xml.Name `xml:"track"`
-	Id       string   `xml:"extension>id"`
-	Location string   `xml:"location"`
-	Title    string   `xml:"title"`
+	Types map[string]struct {
+		Link    string
+		Handler string
+	}
+	Playlists []struct {
+		Type   string
+		Name   string
+		IP     string
+		Port   uint16
+		Format string
+	}
+	Port uint16
 }
 
 func (conf *Configuration) handler(w http.ResponseWriter, r *http.Request) {
 	for _, plConf := range conf.Playlists {
-		if plConf.Type == "pomoyka.allfon.proxy" || plConf.Type == "pomoyka.allfon.iproxy" {
-			if r.URL.Path[1:] == plConf.Name {
-				url := conf.Types[plConf.Type]
-				resp, err := http.Get(url + "?ip=" + plConf.IP + ":" + strconv.Itoa(plConf.Port))
-				if err != nil {
-					fmt.Errorf("GET error: %v", err)
-				}
-				defer resp.Body.Close()
-
-				if resp.StatusCode != http.StatusOK {
-					fmt.Errorf("Status error: %v", resp.StatusCode)
-				}
-
-				xmlByte, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					fmt.Errorf("Read body: %v", err)
-				}
-				var pl Playlist
-				xml.Unmarshal(xmlByte, &pl)
-				var ch = make(map[string]map[string]string)
-				for i := 0; i < len(pl.Tracks); i++ {
-					var data = make(map[string]string)
-					data["title"] = pl.Tracks[i].Title
-					data["location"] = pl.Tracks[i].Location
-					ch[pl.Tracks[i].Id] = data
-				}
-				fmt.Fprintf(w, "#EXTM3U\n")
-				for i := 0; i < len(pl.Groups); i++ {
-					for j := 0; j < len(pl.Groups[i].Channels); j++ {
-						fmt.Fprintf(w, "#EXTINF:0,"+ch[pl.Groups[i].Channels[j].Id]["title"]+"\n")
-						fmt.Fprintf(w, "#EXTGRP:"+pl.Groups[i].Title+"\n")
-						fmt.Fprintf(w, ch[pl.Groups[i].Channels[j].Id]["location"]+"\n")
-					}
-				}
+		if r.URL.Path[1:] == plConf.Name { // check route
+			var ch types.Channels
+			if conf.Types[plConf.Type].Handler == "pomoyka.xspf" {
+				ch = handler.GetPomoykaPlaylist(conf.Types[plConf.Type].Link, plConf.IP, plConf.Port)
+			} else if conf.Types[plConf.Type].Handler == "acesearch" {
+				ch = handler.GetAcePlaylist(conf.Types[plConf.Type].Link, plConf.IP, plConf.Port)
 			}
+			var pl string
+			if plConf.Format == "ott.m3u" {
+				pl = format.M3U(ch)
+			}
+			//fmt.Printf("%+v\n", ch)
+			fmt.Fprintf(w, pl)
 		}
 	}
 }
@@ -102,5 +58,5 @@ func main() {
 	}
 
 	http.HandleFunc("/", configuration.handler)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configuration.Port), nil))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(int(configuration.Port)), nil))
 }
